@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/helios
+      REDIS_URL: redis://redis:6379
+      REALTIME_GATEWAY_URL: ws://gateway:4001/ws
+      PEER_HOST: gateway
+      PEER_PORT: "4001"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - redis
+      - gateway
+
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: helios
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: services/realtime-gateway/Dockerfile
+    environment:
+      PORT: 4001
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "4001:4001"
+    depends_on:
+      - redis
