@@ -29,7 +29,6 @@ Weitere hilfreiche Befehle:
 - `pnpm typecheck` – TypeScript Strict Mode
 - `pnpm test` – Vitest Unit Tests (Dice Engine)
 - `pnpm build` – Produktionsbuild
-- `pnpm --filter @helios/realtime-gateway dev` – Realtime-Gateway im Watch-Modus starten
 
 ## Docker Compose
 
