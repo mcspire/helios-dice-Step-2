@@ -35,7 +35,7 @@ export const rollOutcomeSchema = z.object({
   successes: z.number().min(0),
   crit: z.boolean(),
   panic: z.boolean(),
-  createdAt: z.date(),
+  createdAt: z.coerce.date(),
 });
 
 export type DicePool = z.infer<typeof dicePoolSchema>;
