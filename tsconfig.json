@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "es2022"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "types": ["node", "@total-typescript/ts-reset"],
+    "baseUrl": ".",
+    "paths": {
+      "@helios/ui": ["packages/ui/src"],
+      "@helios/types": ["packages/types/src"],
+      "@helios/utils": ["packages/utils/src"],
+      "@helios/dice-engine": ["packages/dice-engine/src"],
+      "@helios/realtime": ["packages/realtime/src"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "app",
+    "packages",
+    "scripts",
+    "tests",
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": ["node_modules"]
+}
