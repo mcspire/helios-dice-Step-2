@@ -1,9 +1,13 @@
 import { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import { RealtimeProvider } from "@helios/realtime";
 import { DiceSidebar } from "@helios/ui/dice-sidebar";
-import { authenticateUser, issueRealtimeToken } from "@helios/utils/server";
-
-const STATIC_SESSION_ID = "00000000-0000-0000-0000-000000000000";
+import {
+  DEFAULT_SESSION_ID,
+  authenticateUser,
+  issueRealtimeToken,
+  UnauthorizedError,
+} from "@helios/utils/server";
 
 function resolveGatewayUrl() {
   return (
@@ -22,23 +26,30 @@ function resolvePeerConfig() {
 }
 
 export default async function DiceLayout({ children }: { children: ReactNode }) {
-  const { userId } = await authenticateUser();
-  const credential = await issueRealtimeToken(STATIC_SESSION_ID);
-  const gatewayUrl = resolveGatewayUrl();
-  const peerConfig = resolvePeerConfig();
+  try {
+    const { userId } = await authenticateUser();
+    const credential = await issueRealtimeToken(DEFAULT_SESSION_ID);
+    const gatewayUrl = resolveGatewayUrl();
+    const peerConfig = resolvePeerConfig();
 
-  return (
-    <RealtimeProvider
-      sessionId={STATIC_SESSION_ID}
-      userId={userId}
-      token={credential.token}
-      gatewayUrl={gatewayUrl}
-      peerServer={peerConfig}
-    >
-      <div className="grid min-h-screen grid-cols-[320px_1fr] bg-slate-950 text-slate-50">
-        <DiceSidebar />
-        <div className="flex flex-col overflow-hidden">{children}</div>
-      </div>
-    </RealtimeProvider>
-  );
+    return (
+      <RealtimeProvider
+        sessionId={DEFAULT_SESSION_ID}
+        userId={userId}
+        token={credential.token}
+        gatewayUrl={gatewayUrl}
+        peerServer={peerConfig}
+      >
+        <div className="grid min-h-screen grid-cols-[320px_1fr] bg-slate-950 text-slate-50">
+          <DiceSidebar />
+          <div className="flex flex-col overflow-hidden">{children}</div>
+        </div>
+      </RealtimeProvider>
+    );
+  } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      redirect("/login");
+    }
+    throw error;
+  }
 }

@@ -7,6 +7,7 @@ import { ExpressPeerServer } from "peer";
 import { WebSocketServer, type WebSocket } from "ws";
 import { z } from "zod";
 import { realtimeEventSchema, type RealtimeEvent } from "@helios/types";
+import { jwtVerify } from "jose";
 
 interface GatewayClient {
   id: string;
@@ -71,15 +72,17 @@ function log(level: "info" | "warn" | "error", message: string, context?: Record
   }
 }
 
-function validateToken(token: string, sessionId: string) {
+const REALTIME_SECRET = new TextEncoder().encode(
+  process.env.REALTIME_TOKEN_SECRET ?? process.env.ACCESS_TOKEN_SECRET ?? "insecure-access-secret"
+);
+
+async function validateToken(token: string, sessionId: string, userId: string) {
   try {
-    const decoded = Buffer.from(token, "base64").toString("utf8");
-    const [tokenSessionId, issuedAt] = decoded.split(":");
-    if (tokenSessionId !== sessionId) return false;
-    const issued = Number(issuedAt);
-    if (Number.isNaN(issued)) return false;
-    const maxAgeMs = 5 * 60 * 1000;
-    return Date.now() - issued < maxAgeMs;
+    const { payload } = await jwtVerify(token, REALTIME_SECRET, {
+      audience: "helios-realtime",
+      issuer: "helios-platform",
+    });
+    return payload.sessionId === sessionId && payload.userId === userId;
   } catch (error) {
     log("warn", "failed to validate realtime token", { error: String(error) });
     return false;
@@ -218,14 +221,14 @@ function notifyPeerAvailability(client: GatewayClient) {
   }
 }
 
-function handleConnection(ws: WebSocket, request: IncomingMessage) {
+async function handleConnection(ws: WebSocket, request: IncomingMessage) {
   const url = new URL(request.url ?? "", "http://localhost");
   const sessionId = url.searchParams.get("sessionId");
   const userId = url.searchParams.get("userId");
   const token = url.searchParams.get("token");
   const peerId = url.searchParams.get("peerId") ?? undefined;
 
-  if (!sessionId || !userId || !token || !validateToken(token, sessionId)) {
+  if (!sessionId || !userId || !token || !(await validateToken(token, sessionId, userId))) {
     safeSend(ws, { type: "error", message: "unauthorized" });
     ws.close(1008, "Unauthorized");
     return;
@@ -308,7 +311,12 @@ server.on("upgrade", (request, socket, head) => {
   });
 });
 
-wss.on("connection", (ws, request) => handleConnection(ws, request));
+wss.on("connection", (ws, request) => {
+  handleConnection(ws, request).catch((error) => {
+    log("error", "failed to handle websocket connection", { error: String(error) });
+    ws.close(1011, "Internal error");
+  });
+});
 
 server.listen(PORT, () => {
   log("info", `realtime gateway listening on :${PORT}`);

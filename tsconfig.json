@@ -20,6 +20,7 @@
       "@helios/ui": ["packages/ui/src"],
       "@helios/types": ["packages/types/src"],
       "@helios/utils": ["packages/utils/src"],
+      "@helios/utils/*": ["packages/utils/src/*"],
       "@helios/dice-engine": ["packages/dice-engine/src"],
       "@helios/realtime": ["packages/realtime/src"]
     }

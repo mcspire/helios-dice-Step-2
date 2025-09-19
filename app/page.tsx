@@ -1,16 +1,23 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { HubHeader } from "@helios/ui/hub-header";
 import { ModuleTile } from "@helios/ui/module-tile";
 import { SessionList } from "@helios/ui/session-list";
 import { getModuleSummaries } from "@helios/utils/module-registry";
-import { getActiveSessions } from "@helios/utils/server";
+import { getActiveSessions, UnauthorizedError } from "@helios/utils/server";
 
 export default async function HomePage() {
-  const [modules, sessions] = await Promise.all([
-    getModuleSummaries(),
-    getActiveSessions(),
-  ]);
+  const modules = await getModuleSummaries();
+  let sessions;
+  try {
+    sessions = await getActiveSessions();
+  } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      redirect("/login");
+    }
+    throw error;
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-12">
